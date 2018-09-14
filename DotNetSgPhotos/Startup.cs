@@ -50,6 +50,13 @@ namespace DotNetSgPhotos
 
             services.AddApplicationInsightsTelemetry(Configuration);
 
+            services.AddAuthentication()
+                .AddTwitter(twitterOptions =>
+                {
+                    twitterOptions.ConsumerKey = Configuration["Authentication:Twitter:ConsumerKey"];
+                    twitterOptions.ConsumerSecret = Configuration["Authentication:Twitter:ConsumerSecret"];
+                });
+
             services.AddMvc();
         }
 

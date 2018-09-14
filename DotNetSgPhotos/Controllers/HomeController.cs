@@ -44,7 +44,7 @@ namespace DotNetSgPhotos.Controllers
             //    .WithTag("Getting photos near the center of the Singapore.")
             //    .ToList();
 
-            return View();
+            return View(new PhotoViewModel { Photos = nearestPhotos, Name = TempData["MyName"]?.ToString() });
         }
 
         public IActionResult About()
@@ -64,6 +64,7 @@ namespace DotNetSgPhotos.Controllers
         public async Task<IActionResult> UploadNew(PhotoViewModel model)
         {
             string imageUrl = null;
+            var facialProperties = new List<FacialExpression>();
 
             using (var memoryStream = new MemoryStream())
             {
@@ -85,9 +86,11 @@ namespace DotNetSgPhotos.Controllers
                 // Reference: https://cloud.tencent.com/developer/ask/125850
                 memoryStream.Position = 0;
 
-                var faceServiceClient = new FaceServiceClient(_configuration["FaceApiServiceKey"], "https://southeastasia.api.cognitive.microsoft.com/face/v1.0");
-                var faces = await faceServiceClient.DetectAsync(memoryStream, false, false, 
-                    new FaceAttributeType[] {
+                try
+                {
+                    var faceServiceClient = new FaceServiceClient(_configuration["FaceApiServiceKey"], "https://southeastasia.api.cognitive.microsoft.com/face/v1.0");
+                    var faces = await faceServiceClient.DetectAsync(memoryStream, false, false,
+                        new FaceAttributeType[] {
                         FaceAttributeType.Smile,
                         FaceAttributeType.Accessories,
                         FaceAttributeType.Blur,
@@ -100,7 +103,25 @@ namespace DotNetSgPhotos.Controllers
                         FaceAttributeType.Makeup,
                         FaceAttributeType.Noise,
                         FaceAttributeType.Occlusion
-                    });
+                        });
+
+                    foreach (var face in faces)
+                    {
+                        facialProperties.Add(new FacialExpression { Label = "Anger", Value = face.FaceAttributes.Emotion.Anger });
+                        facialProperties.Add(new FacialExpression { Label = "Contempt", Value = face.FaceAttributes.Emotion.Contempt });
+                        facialProperties.Add(new FacialExpression { Label = "Disgust", Value = face.FaceAttributes.Emotion.Disgust });
+                        facialProperties.Add(new FacialExpression { Label = "Fear", Value = face.FaceAttributes.Emotion.Fear });
+                        facialProperties.Add(new FacialExpression { Label = "Happiness", Value = face.FaceAttributes.Emotion.Happiness });
+                        facialProperties.Add(new FacialExpression { Label = "Neutral", Value = face.FaceAttributes.Emotion.Neutral });
+                        facialProperties.Add(new FacialExpression { Label = "Sadness", Value = face.FaceAttributes.Emotion.Sadness });
+                        facialProperties.Add(new FacialExpression { Label = "Surprise", Value = face.FaceAttributes.Emotion.Surprise });
+                    }
+                    
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
 
             double adjustedLatitude = 1.3450524;
@@ -116,10 +137,10 @@ namespace DotNetSgPhotos.Controllers
                 var newPhoto = new Photo
                 {
                     Url = imageUrl,
-                    FacialExpressions = new List<FacialExpression>(),
+                    FacialExpressions = facialProperties,
                     Location = new Point(adjustedLatitude, adjustedLongitude),
-                    CreatedBy = "",
-                    UpdatedBy = ""
+                    CreatedBy = model.Name,
+                    UpdatedBy = model.Name
                 };
 
                 await _repoPhotos.AddAsync(newPhoto);
@@ -128,11 +149,22 @@ namespace DotNetSgPhotos.Controllers
                 //await _repoPhotos.AddToCosmosDbAsync(newPhoto);
             }
 
+            TempData["MyName"] = model.Name;
+
             TempData["NewImageUrl"] = imageUrl;
             TempData["NewLatitude"] = adjustedLatitude;
             TempData["NewLongitude"] = adjustedLongitude;
 
-            return RedirectToAction("Index");
+            TempData["NewEmotionAnger"]     = facialProperties.Where(fp => fp.Label == "Anger").Select(fp => fp.Value).Sum();
+            TempData["NewEmotionContempt"]  = facialProperties.Where(fp => fp.Label == "Contempt").Select(fp => fp.Value).Sum();
+            TempData["NewEmotionDisgust"]   = facialProperties.Where(fp => fp.Label == "Disgust").Select(fp => fp.Value).Sum();
+            TempData["NewEmotionFear"]      = facialProperties.Where(fp => fp.Label == "Fear").Select(fp => fp.Value).Sum();
+            TempData["NewEmotionHappiness"] = facialProperties.Where(fp => fp.Label == "Happiness").Select(fp => fp.Value).Sum();
+            TempData["NewEmotionNeutral"]   = facialProperties.Where(fp => fp.Label == "Neutral").Select(fp => fp.Value).Sum();
+            TempData["NewEmotionSadness"]   = facialProperties.Where(fp => fp.Label == "Sadness").Select(fp => fp.Value).Sum();
+            TempData["NewEmotionSurprise"]  = facialProperties.Where(fp => fp.Label == "Surprise").Select(fp => fp.Value).Sum();
+
+            return RedirectToAction(nameof(Index));
         }
 
         public IActionResult Error()

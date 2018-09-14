@@ -1,4 +1,5 @@
-﻿@using DotNetSgPhotos.Data.ViewModels
+﻿@using System.Text.Encodings.Web;
+@using DotNetSgPhotos.Data.ViewModels
 
 @model PhotoViewModel
 
@@ -8,6 +9,15 @@
     string newImageUrl = (string)TempData["NewImageUrl"];
     double newLatitude = TempData["NewLatitude"] == null ? 1.3450524 : (double)TempData["NewLatitude"];
     double newLongitude = TempData["NewLongitude"] == null ? 103.8046703 : (double)TempData["NewLongitude"];
+
+    double anger = TempData["NewEmotionAnger"] == null ? 0 : (double)TempData["NewEmotionAnger"];
+    double contempt = TempData["NewEmotionContempt"] == null ? 0 : (double)TempData["NewEmotionContempt"];
+    double disgust = TempData["NewEmotionDisgust"] == null ? 0 : (double)TempData["NewEmotionDisgust"];
+    double fear = TempData["NewEmotionFear"] == null ? 0 : (double)TempData["NewEmotionFear"];
+    double happiness = TempData["NewEmotionHappiness"] == null ? 0 : (double)TempData["NewEmotionHappiness"];
+    double neutral = TempData["NewEmotionNeutral"] == null ? 0 : (double)TempData["NewEmotionNeutral"];
+    double sadness = TempData["NewEmotionSadness"] == null ? 0 : (double)TempData["NewEmotionSadness"];
+    double surprise = TempData["NewEmotionSurprise"] == null ? 0 : (double)TempData["NewEmotionSurprise"];
 }
 
 <div id="LocationNotWorking" class="alert alert-dismissible alert-danger" style="display: none;">
@@ -24,25 +34,63 @@
 }
 
 <div class="row" s>
-    <div class="col-md-4">
-        <form asp-action="UploadNew" asp-controller="Home" method="post" enctype="multipart/form-data">
-
-            <input asp-for="File" type="file" class="form-control" />
-
+    <div class="col-md-4" style="margin-top: 6px;">
+        <form asp-action="UploadNew" asp-controller="Home" method="post" enctype="multipart/form-data" class="form-horizontal">
             <input asp-for="Latitude" />
             <input asp-for="Longitude" />
 
-            <button type="submit" class="btn btn-success pull-left" onclick="return confirm('Are you sure you want to upload this entry?');">Upload</button>
+            <fieldset>
+                <legend>Submission</legend>
+                <div class="form-group">
+                    <label for="Name" class="col-sm-12 control-label" style="text-align: left;">My Name</label>
+                    <div class="col-sm-12">
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="File" class="col-sm-12 control-label" style="text-align: left;">Photo Taken By Me</label>
+                    <div class="col-sm-12">
+                        <input asp-for="File" type="file" class="form-control" />
+                        <span asp-validation-for="File" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-12">
+                        <button type="submit" class="btn btn-success pull-left" onclick="return confirm('Are you sure you want to upload this entry?');">Upload</button>
+                    </div>
+                </div>
+            </fieldset>
         </form>
+        
+
+            
+        
     </div>
-    <div class="col-md-4">
+    <div class="col-md-4" style="margin-top: 6px;">
         @if (newImageUrl != null)
-        { 
-            <img src="@newImageUrl" style="width: 100%;" />
+        {
+            <div class="well">
+                <img src="@newImageUrl" style="width: 100%;" />
+                <div id="expressions"></div>
+            </div>            
         }
     </div>
-    <div class="col-md-4">
+    <div class="col-md-4" style="margin-top: 6px;">
         <div id="map"></div>
+    </div>
+</div>
+
+<div id="modalPhoto" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div id="modalBodyContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -51,6 +99,52 @@
     <script>
         $(function () {
             getLocation();
+
+            @if (newImageUrl != null)
+            {
+                <text>
+                    // Load the Visualization API and the corechart package.
+                    google.charts.load('current', { 'packages': ['corechart'] });
+
+                    // Set a callback to run when the Google Visualization API is loaded.
+                    google.charts.setOnLoadCallback(drawChart);
+
+                    // Callback that creates and populates a data table,
+                    // instantiates the pie chart, passes in the data and
+                    // draws it.
+                    function drawChart() {
+
+                        // Create the data table.
+                        var data = new google.visualization.DataTable();
+                        data.addColumn('string', 'Expression');
+                        data.addColumn('number', 'Value');
+                        data.addRows([
+
+
+                            ['Anger', @anger],
+                            ['Conntempt', @contempt],
+                            ['Disgust', @disgust],
+                            ['Fear', @fear],
+                            ['Happiness',@happiness],
+                            ['Neutral', @neutral],
+                            ['Sadness', @sadness],
+                            ['Surprise', @surprise]
+                        ]);
+
+                        // Set chart options
+                        var options = {
+                            'title': 'How do you feel?',
+                            'width': 400,
+                            'height': 300
+                        };
+
+                        // Instantiate and draw our chart, passing in some options.
+                        var chart = new google.visualization.PieChart(document.getElementById('expressions'));
+                        chart.draw(data, options);
+                    }
+                </text>
+            }
+
         });
 
         function getLocation() {
@@ -71,15 +165,38 @@
             var defaultLatLng = { lat: @newLatitude, lng: @newLongitude };
 
             var map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 16,
+                zoom: 12,
                 center: defaultLatLng
             });
 
-            var marker = new google.maps.Marker({
-                position: defaultLatLng,
-                map: map,
-                title: 'Hello World!'
-            });
+            @if (Model.Photos != null && Model.Photos.Count > 0)
+            {
+                int markerCounter = 1;
+                foreach (var photo in Model.Photos)
+                {
+                    if (string.IsNullOrWhiteSpace(photo.CreatedBy) || string.IsNullOrWhiteSpace(photo.Url))
+                    {
+                        continue;
+                    }
+
+                    <text>
+                        var marker@(markerCounter) = new google.maps.Marker({
+                            position: { lat: @photo.Location.X, lng: @photo.Location.Y },
+                            map: map,
+                            title: 'Submitted by @Html.Raw(JavaScriptEncoder.Default.Encode(photo.CreatedBy))',
+                            photoUrl: '@photo.Url'
+                        });
+
+                        google.maps.event.addListener(marker@(markerCounter), 'click', function () {
+                            $('#modalBodyContent').html('<img src="@photo.Url" style="width: 100%;" />');
+                            $('#modalPhoto').modal('show');
+                        });
+                    </text>
+
+                    markerCounter++;
+                }
+
+            }
         }
     </script>
 }
