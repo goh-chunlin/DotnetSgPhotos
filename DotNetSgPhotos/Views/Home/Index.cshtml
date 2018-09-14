@@ -1,0 +1,85 @@
+﻿@using DotNetSgPhotos.Data.ViewModels
+
+@model PhotoViewModel
+
+@{
+    ViewData["Title"] = "Home Page";
+
+    string newImageUrl = (string)TempData["NewImageUrl"];
+    double newLatitude = TempData["NewLatitude"] == null ? 1.3450524 : (double)TempData["NewLatitude"];
+    double newLongitude = TempData["NewLongitude"] == null ? 103.8046703 : (double)TempData["NewLongitude"];
+}
+
+<div id="LocationNotWorking" class="alert alert-dismissible alert-danger" style="display: none;">
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <strong>Oh snap!</strong> Your browser does not support Geolocation.
+</div>
+
+@if (newImageUrl != null)
+{
+    <div class="alert alert-dismissible alert-success">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <strong>Yay!</strong> Your image is successfully uploaded. Thank you!
+    </div>
+}
+
+<div class="row" s>
+    <div class="col-md-4">
+        <form asp-action="UploadNew" asp-controller="Home" method="post" enctype="multipart/form-data">
+
+            <input asp-for="File" type="file" class="form-control" />
+
+            <input asp-for="Latitude" />
+            <input asp-for="Longitude" />
+
+            <button type="submit" class="btn btn-success pull-left" onclick="return confirm('Are you sure you want to upload this entry?');">Upload</button>
+        </form>
+    </div>
+    <div class="col-md-4">
+        @if (newImageUrl != null)
+        { 
+            <img src="@newImageUrl" style="width: 100%;" />
+        }
+    </div>
+    <div class="col-md-4">
+        <div id="map"></div>
+    </div>
+</div>
+
+@section Scripts
+    {
+    <script>
+        $(function () {
+            getLocation();
+        });
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition);
+            } else {
+                $('#LocationNotWorking').show();
+            }
+        }
+
+        function showPosition(position) {
+            $('#Latitude').val(position.coords.latitude);
+
+            $('#Longitude').val(position.coords.longitude);
+        }
+
+        function initMap() {
+            var defaultLatLng = { lat: @newLatitude, lng: @newLongitude };
+
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 16,
+                center: defaultLatLng
+            });
+
+            var marker = new google.maps.Marker({
+                position: defaultLatLng,
+                map: map,
+                title: 'Hello World!'
+            });
+        }
+    </script>
+}
