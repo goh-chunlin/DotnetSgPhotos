@@ -57,7 +57,7 @@
                 </div>
                 <div class="form-group">
                     <div class="col-sm-12">
-                        <button type="submit" class="btn btn-success pull-left" onclick="return confirm('Are you sure you want to upload this entry?');">Upload</button>
+                        <button type="submit" class="btn btn-success pull-left" onclick="return checkFileSize() && confirm('Are you sure you want to upload this entry?');">Upload</button>
                     </div>
                 </div>
             </fieldset>
@@ -146,6 +146,26 @@
             }
 
         });
+
+        function checkFileSize() { 
+            var files = $('#File')[0].files;
+
+            if (files.length == 0) {
+                return false;
+            }
+
+            var size = files[0].size;
+
+            if ((size / 1024 / 1024) > 5) {
+
+                alert('Please upload files with total size less than 5MB. Please do not stress the server.');
+
+                return false;
+
+            }
+
+            return true;
+        }
 
         function getLocation() {
             if (navigator.geolocation) {
