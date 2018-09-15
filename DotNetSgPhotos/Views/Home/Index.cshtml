@@ -122,7 +122,7 @@
 
 
                             ['Anger', @anger],
-                            ['Conntempt', @contempt],
+                            ['Contempt', @contempt],
                             ['Disgust', @disgust],
                             ['Fear', @fear],
                             ['Happiness',@happiness],
@@ -202,13 +202,11 @@
                     <text>
                         var marker@(markerCounter) = new google.maps.Marker({
                             position: { lat: @photo.Location.X, lng: @photo.Location.Y },
-                            map: map,
-                            title: 'Submitted by @Html.Raw(JavaScriptEncoder.Default.Encode(photo.CreatedBy))',
-                            photoUrl: '@photo.Url'
+                            map: map
                         });
 
                         google.maps.event.addListener(marker@(markerCounter), 'click', function () {
-                            $('#modalBodyContent').html('<img src="@photo.Url" style="width: 100%;" />');
+                            $('#modalBodyContent').html('<img src="@photo.Url" style="width: 100%;" /><br />Submitted by <strong>@Html.Raw(JavaScriptEncoder.Default.Encode(photo.CreatedBy))</strong>');
                             $('#modalPhoto').modal('show');
                         });
                     </text>
